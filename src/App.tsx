@@ -6,12 +6,15 @@ import {TileLayer} from '@deck.gl/geo-layers';
 import {BitmapLayer, PathLayer} from '@deck.gl/layers';
 
 import type {Position, MapViewState} from '@deck.gl/core';
-import type {PickingInfo} from "deck.gl";
+import {GeoJsonLayer, PickingInfo} from "deck.gl";
+import type {Feature, Geometry} from 'geojson';
+
+const DATA_URL = "https://raw.githubusercontent.com/rmwiesenberg/collab-map/refs/heads/main/data/solar.geojson";
 
 const INITIAL_VIEW_STATE: MapViewState = {
     latitude: 44.9346984280946,
-    longitude: -93.27211595909854,
-    zoom: 10,
+    longitude: -93.26225984401101,
+    zoom: 18,
     maxZoom: 20,
     maxPitch: 89,
     bearing: 0
@@ -35,8 +38,17 @@ const LINK_STYLE: React.CSSProperties = {
 /* global window */
 const devicePixelRatio = (typeof window !== 'undefined' && window.devicePixelRatio) || 1;
 
-function getTooltip(_: PickingInfo) {
-    return null;
+type SolarProperties = {
+    name: string;
+};
+
+function getTooltip(info: PickingInfo<Feature<Geometry, SolarProperties>>) {
+    return info.object ?
+        {
+            html: `\
+            <div><b>${info.object.properties.name}</b></div>
+            `
+        } : null;
 }
 
 export function App({
@@ -46,6 +58,17 @@ export function App({
     showBorder?: boolean;
     onTilesLoad?: () => void;
 }) {
+    const dataLayer = new GeoJsonLayer<SolarProperties>({
+        id: 'solar',
+        data: DATA_URL,
+        pointType: 'circle',
+        filled: true,
+        getFillColor: [0, 255, 0],
+        getPointRadius: 4,
+        pointRadiusMinPixels: 10,
+        pickable: true
+    });
+
     const tileLayer = new TileLayer<ImageBitmap>({
         // https://wiki.openstreetmap.org/wiki/Slippy_map_tilenames#Tile_servers
         data: ['https://tile.openstreetmap.org/{z}/{x}/{y}.png'],
@@ -54,7 +77,7 @@ export function App({
         // and we aren't limited by the browser to a certain number per domain.
         maxRequests: 20,
 
-        pickable: true,
+        pickable: false,
         onViewportLoad: onTilesLoad,
         autoHighlight: showBorder,
         highlightColor: [60, 60, 60, 40],
@@ -94,7 +117,7 @@ export function App({
 
     return (
         <DeckGL
-            layers={[tileLayer]}
+            layers={[tileLayer, dataLayer]}
             views={new MapView({repeat: true})}
             initialViewState={INITIAL_VIEW_STATE}
             controller={true}
