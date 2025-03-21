@@ -12,6 +12,9 @@
     "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@loaders.gl/core": "^4.3.3",
+    "@loaders.gl/wkt": "^4.3.3",
+    "@supabase/supabase-js": "^2.49.1",
     "deck.gl": "^9.1.5",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"

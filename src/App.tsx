@@ -7,9 +7,9 @@ import {BitmapLayer, PathLayer} from '@deck.gl/layers';
 
 import type {Position, MapViewState} from '@deck.gl/core';
 import {GeoJsonLayer, PickingInfo} from "deck.gl";
-import type {Feature, Geometry} from 'geojson';
-
-const DATA_URL = "https://raw.githubusercontent.com/rmwiesenberg/collab-map/refs/heads/main/data/solar.geojson";
+import type {Feature, Geometry, GeoJSON} from 'geojson';
+import supabase from './supabase.ts'
+import {window} from "@loaders.gl/core";
 
 const INITIAL_VIEW_STATE: MapViewState = {
     latitude: 44.9346984280946,
@@ -51,6 +51,27 @@ function getTooltip(info: PickingInfo<Feature<Geometry, SolarProperties>>) {
         } : null;
 }
 
+const getData = async () : Promise<GeoJSON> => {
+    const { data: features } = await supabase.rpc("get_all")
+
+    return {
+        type: 'FeatureCollection',
+        features: features?.map((entry: any) => {
+            return {
+                geometry: {
+                    "type": "Point",
+                    "coordinates": [entry.lng, entry.lat],
+                },
+                type: 'Feature',
+                properties: {
+                    name: entry.name
+                }
+            }
+
+    }) ?? []
+    }
+}
+
 export function App({
                                 showBorder = false,
                                 onTilesLoad
@@ -60,7 +81,7 @@ export function App({
 }) {
     const dataLayer = new GeoJsonLayer<SolarProperties>({
         id: 'solar',
-        data: DATA_URL,
+        data: getData(),
         pointType: 'circle',
         filled: true,
         getFillColor: [0, 255, 0],
